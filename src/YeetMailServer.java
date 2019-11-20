@@ -24,7 +24,7 @@ public class YeetMailServer {
 				pairing = sock.accept();
 				if(pairing != null) {
 					clients.add(pairing);
-					Runnable task = new Connection(sock.accept());
+					Runnable task = new Connection(pairing, clients);
 					exec.execute(task);
 				}
 			}
