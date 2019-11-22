@@ -13,38 +13,41 @@ public class Connection implements Runnable{
 	BufferedWriter toClient = null;
 	HashMap<String, BufferedWriter> clients;
 
-	public Connection(Socket client, HashMap<String, BufferedWriter> clients) {
+	public Connection(Socket client, HashMap<String, BufferedWriter> clients) throws IOException {
 		this.client = client;
 		this.clients = clients;
+		toClient = new BufferedWriter(new OutputStreamWriter(this.client.getOutputStream()));
+		fromClient = new BufferedReader(new InputStreamReader(this.client.getInputStream()));
 	}
 	@Override
 	public void run() {
 		try {
-			fromClient = new BufferedReader(new InputStreamReader(client.getInputStream()));
 			while (true) {
 				String unParsedMessage = "";
 				// Read a message from the client
 				while (fromClient.ready()) {
 					unParsedMessage += fromClient.readLine() + "\r\n";
 				}
+				if(unParsedMessage.length() == 0){
+					continue;
+				}
 				// extract the status code of the message we're receiving from the client
-				String type = unParsedMessage.substring(unParsedMessage.indexOf(":"), unParsedMessage.indexOf("\\")).trim();
-				System.out.println("Message type: " + type);
+				String type = unParsedMessage.substring(unParsedMessage.indexOf(":") + 1, unParsedMessage.indexOf("\\")).replaceAll(" ", "");
+				System.out.println("Message type:" + type);
 				System.out.println("Unparsed Message: " + unParsedMessage);
-
-				switch (Integer.getInteger(type)) {
-					case 200: // new user name request/join
+				switch (type) {
+					case "200": // new user name request/join
 						if (!joinServer(unParsedMessage)) {
 							return;
 						}
 						break;
-					case 202: // general message
+					case "202": // general message
 						publicMessage(unParsedMessage);
 						break;
-					case 203: // private message
+					case "203": // private message
 						privateMessage(unParsedMessage);
 						break;
-					case 300: // leaving chat/exit request
+					case "300": // leaving chat/exit request
 						// Let everyone know that the user is exiting the chat
 						// Remove the socket from the list
 						sendExitMessage(toClient);
@@ -54,8 +57,6 @@ public class Connection implements Runnable{
 						break;
 				}
 			}
-		} catch (SocketException se) {
-			//Handle when we have a disconnected client on our hands.
 		} catch (IOException ioe) {
 			System.err.println(ioe);
 		} finally {
@@ -79,9 +80,9 @@ public class Connection implements Runnable{
 
 	private Boolean joinServer(String request) throws java.io.IOException {
 		// Check if the requested username is in the clients hash map
-		request = request.substring(request.indexOf("\\n") + 1); // Chop out the status code
+		request = request.substring(request.indexOf("\\n") + 2); // Chop out the status code
 		String date = request.substring(0, request.indexOf("\\r"));
-		request = request.substring(request.indexOf("\\n") + 1);
+		request = request.substring(request.indexOf("\\n") + 2);
 		String requestedName = request.substring(0, request.indexOf("\\r"));
 		// If the username is already in the dictionary, we send back an error
 		if (clients.containsKey(requestedName)) {
