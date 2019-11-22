@@ -2,7 +2,9 @@
 // By Calvin Golas and Harrison Crisman
 import java.net.*;
 import java.io.*;
+import java.nio.Buffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.*;
 public class YeetMailServer {
 	// The port our server listens on!
@@ -13,7 +15,7 @@ public class YeetMailServer {
 	public static void main(String[] args) throws IOException {
 		ServerSocket sock = null;
 		// This is gonna store the clients
-		ArrayList<Socket> clients = new ArrayList<Socket>();
+		HashMap<String, BufferedWriter> clients = new HashMap<String, BufferedWriter>();
 		try{
 			// Establish the server socket connection.
 			sock = new ServerSocket(DEFAULT_PORT);
@@ -23,7 +25,7 @@ public class YeetMailServer {
 				Socket pairing = null;
 				pairing = sock.accept();
 				if(pairing != null) {
-					clients.add(pairing);
+					//clients.add(new BufferedWriter(new OutputStreamWriter(pairing.getOutputStream())));
 					Runnable task = new Connection(pairing, clients);
 					exec.execute(task);
 				}
