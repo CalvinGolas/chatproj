@@ -1,11 +1,13 @@
 // A delightful implementation of the YeetMail Protocol
 // By Calvin Golas and Harrison Crisman
-import java.net.*;
-import java.io.*;
-import java.nio.Buffer;
-import java.util.ArrayList;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
-import java.util.concurrent.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 public class YeetMailServer {
 	// The port our server listens on!
 	public static final int DEFAULT_PORT = 7331;
@@ -22,10 +24,9 @@ public class YeetMailServer {
 
 			while(true) {
 				// Listens for connections and then accepts and appends them to the list.
-				Socket pairing = null;
-				pairing = sock.accept();
+				Socket pairing = sock.accept();
 				if(pairing != null) {
-					//clients.add(new BufferedWriter(new OutputStreamWriter(pairing.getOutputStream())));
+					System.out.println("Socket connection attempted!" + pairing);
 					Runnable task = new Connection(pairing, clients);
 					exec.execute(task);
 				}

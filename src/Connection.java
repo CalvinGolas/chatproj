@@ -1,8 +1,8 @@
 // This is a separate thread that services each new connecting client.
 // A delightful program by Calvin Golas and Harrison Crisman
 
-import java.net.*;
 import java.io.*;
+import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.TimeZone;
@@ -31,8 +31,14 @@ public class Connection implements Runnable{
 				if(unParsedMessage.length() == 0){
 					continue;
 				}
+				System.out.println("Begin message:");
+				System.out.println(unParsedMessage);
+				System.out.println("End message");
 				// extract the status code of the message we're receiving from the client
-				String type = unParsedMessage.substring(unParsedMessage.indexOf(":") + 1, unParsedMessage.indexOf("\\")).replaceAll(" ", "");
+				unParsedMessage.replaceAll("\\r\\n", "\r\n");
+				String type = unParsedMessage.substring(unParsedMessage.indexOf(":") + 1, unParsedMessage.indexOf("\r\n")).replaceAll(" ", "");
+				//String type = unParsedMessage.substring(unParsedMessage.indexOf(":") + 1, unParsedMessage.indexOf("date")).trim();
+
 				System.out.println("Message type:" + type);
 				System.out.println("Unparsed Message: " + unParsedMessage);
 				switch (type) {
@@ -80,14 +86,15 @@ public class Connection implements Runnable{
 
 	private Boolean joinServer(String request) throws java.io.IOException {
 		// Check if the requested username is in the clients hash map
-		request = request.substring(request.indexOf("\\n") + 2); // Chop out the status code
-		String date = request.substring(0, request.indexOf("\\r"));
-		request = request.substring(request.indexOf("\\n") + 2);
-		String requestedName = request.substring(0, request.indexOf("\\r"));
+		request = request.substring(request.indexOf("\r\n") + 2); // Chop out the status code
+		String date = request.substring(0, request.indexOf("\r"));
+		request = request.substring(request.indexOf("\r\n") + 2);
+		String requestedName = request.substring(0, request.indexOf("\r\n"));
 		// If the username is already in the dictionary, we send back an error
 		if (clients.containsKey(requestedName)) {
 			// Send a 401 message
 			toClient.write("status: 401\r\n");
+			System.out.println("info" + date);
 			toClient.write(date + "\r\n");
 			toClient.write("from: " + requestedName + "\r\n\r\n\r\n");
 			toClient.flush();
@@ -95,8 +102,10 @@ public class Connection implements Runnable{
 			client.close();
 			return false;
 		} else { // If not, we give them that username and return a 201 message!
+			toClient.flush();
 			clients.put(requestedName, toClient);
 			toClient.write("status: 201\r\n");
+			System.out.println("info" + date);
 			toClient.write(date + "\r\n");
 			toClient.write("from: " + requestedName + "\r\n\r\n\r\n");
 			toClient.flush();
