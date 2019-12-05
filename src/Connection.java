@@ -95,8 +95,7 @@ public class Connection implements Runnable{
 			// Send a 401 message
 			toClient.write("status: 401\r\n");
 			System.out.println("info" + date);
-			toClient.write(date + "\r\n");
-			toClient.write("from: " + requestedName + "\r\n\r\n\r\n");
+			toClient.write(date + "\r\n\r\n");
 			toClient.flush();
 			// Close the socket and terminate the thread
 			client.close();
@@ -106,8 +105,7 @@ public class Connection implements Runnable{
 			clients.put(requestedName, toClient);
 			toClient.write("status: 201\r\n");
 			System.out.println("info" + date);
-			toClient.write(date + "\r\n");
-			toClient.write("from: " + requestedName + "\r\n\r\n\r\n");
+			toClient.write(date + "\r\n\r\n");
 			toClient.flush();
 			return true;
 		}
@@ -135,20 +133,23 @@ public class Connection implements Runnable{
 		String destUser = clipped.substring(0, clipped.indexOf("\r\n"));
 		// See if the destination user is in the dictionary
 		if (!clients.containsKey(destUser)) { // If user not found, send a 404 back
-			sendFourOhFour(date, clients.get(destUser));
+			sendFourOhFour(date, destUser);
 		}
 		try {
-			clients.get(destUser).write(request);
+			if (clients.get(destUser) != null) {
+				clients.get(destUser).write(request);
+				sendFourOhFour(date, destUser);
+			}
 		} catch (IOException e) {
-			sendFourOhFour(date, clients.get(destUser));
+			sendFourOhFour(date, destUser);
 			sendExitMessage(clients.get(destUser));
 		}
 	}
 
 	// Sends a 404 message to the client when they try to contact a user that doesn't exist or has disconnected
-	private void sendFourOhFour(String date, BufferedWriter missingUser) {
+	private void sendFourOhFour(String date, String missingUser) {
 		try {
-			toClient.write("status: 404 \r\n");
+			toClient.write("status: 404\r\n");
 			toClient.write(date + "\r\n");
 			toClient.write("from: " + missingUser + "\r\n\r\n\r\n");
 			toClient.flush();
