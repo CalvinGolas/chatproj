@@ -12,6 +12,7 @@ public class Connection implements Runnable{
 	BufferedReader fromClient = null;
 	BufferedWriter toClient = null;
 	HashMap<String, BufferedWriter> clients;
+	String name = "";
 
 	public Connection(Socket client, HashMap<String, BufferedWriter> clients) throws IOException {
 		this.client = client;
@@ -44,6 +45,8 @@ public class Connection implements Runnable{
 				switch (type) {
 					case "200": // new user name request/join
 						if (!joinServer(unParsedMessage)) {
+							String enterMessage = "status: 301\r\ndate: " + getDate() + "\r\n" + name + " has entered the server!\r\n\r\n\r\n";
+							publicMessage(enterMessage);
 							return;
 						}
 						break;
@@ -66,6 +69,10 @@ public class Connection implements Runnable{
 		} catch (IOException ioe) {
 			System.err.println(ioe);
 		} finally {
+			if(clients.get(toClient) != null) {
+				sendExitMessage(toClient);
+			}
+			sendExitMessage(toClient);
 			// close streams and socket
 			if (fromClient != null) {
 				try {
@@ -90,6 +97,7 @@ public class Connection implements Runnable{
 		String date = request.substring(0, request.indexOf("\r"));
 		request = request.substring(request.indexOf("\r\n") + 2);
 		String requestedName = request.substring(0, request.indexOf("\r\n"));
+		name = requestedName;
 		// If the username is already in the dictionary, we send back an error
 		if (clients.containsKey(requestedName)) {
 			// Send a 401 message
